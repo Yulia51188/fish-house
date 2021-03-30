@@ -30,9 +30,9 @@ def add_item_to_cart(item_id, quantity, url, token):
     }
     payload = {
         "data": {
-            "id": "157c27e4-82bf-46ba-8947-9c9cc8b28b19",
+            "id": item_id,
             "type": "cart_item",
-            "quantity": 1
+            "quantity": quantity,
         }
     }
     response = requests.post(
@@ -44,14 +44,40 @@ def add_item_to_cart(item_id, quantity, url, token):
     return response.json()["data"]
 
 
+def get_cart(url, token):
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    response = requests.get(
+        f'{url}/v2/carts/:reference',
+        headers=headers
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def get_cart_items(url, token):
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    response = requests.get(
+        f'{url}/v2/carts/:reference/items',
+        headers=headers
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def main():
     load_dotenv()
     client_id = os.getenv("CLIENT_ID")
     base_url = os.getenv("MOLTIN_API_BASE_URL")
     store_access_token = get_access_token(base_url, client_id)
     products = get_products(base_url, store_access_token)
-    add_item_to_cart(products[0]["id"], 2, base_url, store_access_token)
-    
+    add_item_to_cart(products[1]["id"], 1, base_url, store_access_token)
+    cart = get_cart(base_url, store_access_token)
+    cart_items = get_cart_items(base_url, store_access_token)
+
 
 if __name__ == '__main__':
     main()
