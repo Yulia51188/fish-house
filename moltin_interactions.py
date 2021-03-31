@@ -3,8 +3,10 @@ import requests
 
 from dotenv import load_dotenv
 
+MOLTIN_URL = 'https://api.moltin.com'
 
-def get_products(url, token):
+
+def get_products(token, url=MOLTIN_URL):
     headers = {
         'Authorization': f'Bearer {token}',
     }
@@ -13,7 +15,7 @@ def get_products(url, token):
     return response.json()['data']
 
 
-def get_access_token(url, client_id):
+def get_access_token(client_id, url=MOLTIN_URL):
     data = {
         'client_id': client_id,
         'grant_type': 'implicit',
@@ -23,7 +25,7 @@ def get_access_token(url, client_id):
     return response.json()["access_token"]
 
 
-def add_item_to_cart(item_id, quantity, url, token):
+def add_item_to_cart(item_id, quantity, token, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -44,7 +46,7 @@ def add_item_to_cart(item_id, quantity, url, token):
     return response.json()["data"]
 
 
-def get_cart(url, token):
+def get_cart(token, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
@@ -56,7 +58,7 @@ def get_cart(url, token):
     return response.json()
 
 
-def get_cart_items(url, token):
+def get_cart_items(token, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
@@ -71,12 +73,12 @@ def get_cart_items(url, token):
 def main():
     load_dotenv()
     client_id = os.getenv("CLIENT_ID")
-    base_url = os.getenv("MOLTIN_API_BASE_URL")
-    store_access_token = get_access_token(base_url, client_id)
-    products = get_products(base_url, store_access_token)
-    add_item_to_cart(products[1]["id"], 1, base_url, store_access_token)
-    cart = get_cart(base_url, store_access_token)
-    cart_items = get_cart_items(base_url, store_access_token)
+    base_url = os.getenv("MOLTIN_API_BASE_URL", default=MOLTIN_URL)
+    store_access_token = get_access_token(client_id, base_url)
+    products = get_products(store_access_token, base_url)
+    add_item_to_cart(products[1]["id"], 1, store_access_token, base_url)
+    cart = get_cart(store_access_token, base_url)
+    cart_items = get_cart_items(store_access_token, base_url)
 
 
 if __name__ == '__main__':
