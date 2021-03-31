@@ -7,6 +7,7 @@ redis==3.2.1
 import os
 import logging
 import redis
+import moltin_interactions as moltin
 
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -15,6 +16,8 @@ from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler,
                             MessageHandler)
 
 _database = None
+_store_token = None
+
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -33,13 +36,8 @@ def start(bot, update):
     Бот отвечает пользователю фразой "Привет!" и переводит его в состояние ECHO.
     Теперь в ответ на его команды будет запускаеться хэндлер echo.
     """
-    keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
-
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
-
+    keyboard = get_products_keyboard(get_store_token())
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
     return "BUTTON"
 
@@ -79,6 +77,7 @@ def handle_users_reply(bot, update):
     Если пользователь захочет начать общение с ботом заново, он также может воспользоваться этой командой.
     """
     db = get_database_connection()
+
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -87,7 +86,6 @@ def handle_users_reply(bot, update):
         chat_id = update.callback_query.message.chat_id
     else:
         return
-    logger.info(f'Current user_reply is: {user_reply}')
     if user_reply == '/start':
         user_state = 'START'
     else:
@@ -109,6 +107,15 @@ def handle_users_reply(bot, update):
         print(err)
 
 
+def get_products_keyboard(token):
+    products = moltin.get_products(token)
+    buttons = [
+        [InlineKeyboardButton(product["name"], callback_data=product["id"])]
+        for product in products
+    ]
+    return buttons
+
+
 def get_database_connection():
     """
     Возвращает конекшн с базой данных Redis, либо создаёт новый, если он ещё не создан.
@@ -121,6 +128,18 @@ def get_database_connection():
         _database = redis.Redis(host=database_host, port=database_port,
             password=database_password)
     return _database
+
+
+def get_store_token():
+    """
+    Возвращает токен CRM магазина, либо запрашивает новый по client_id
+    """
+    global _store_token
+    if _store_token is None:
+        client_id = os.getenv("CLIENT_ID")
+        _store_token = moltin.get_access_token(client_id)
+        logger.info(f'Store token is received {_store_token}')
+    return _store_token
 
 
 if __name__ == '__main__':
