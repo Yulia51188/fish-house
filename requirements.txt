@@ -1,2 +1,4 @@
 requests==2.25.1
-pip install python-dotenv
+python-dotenv==0.16.0
+redis==3.2.1
+python-telegram-bot==11.1.0
