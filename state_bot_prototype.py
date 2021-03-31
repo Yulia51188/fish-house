@@ -7,12 +7,23 @@ redis==3.2.1
 import os
 import logging
 import redis
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater
-from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
+from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler,
+                            MessageHandler)
 
 _database = None
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def handle_error(bot, update, error):
+    """Log Errors caused by Updates."""
+    logger.warning('Update "%s" caused error "%s"', update, error)
 
 
 def start(bot, update):
@@ -97,9 +108,11 @@ def get_database_connection():
 if __name__ == '__main__':
     load_dotenv()
     token = os.getenv("TG_TOKEN")
+
     updater = Updater(token)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
     dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dispatcher.add_handler(CommandHandler('start', handle_users_reply))
+    updater.dispatcher.add_error_handler(handle_error)
     updater.start_polling()
