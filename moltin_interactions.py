@@ -15,6 +15,15 @@ def get_products(token, url=MOLTIN_URL):
     return response.json()['data']
 
 
+def get_product_details(token, product_id, url=MOLTIN_URL):
+    headers = {
+        'Authorization': f'Bearer {token}',
+    }
+    response = requests.get(f'{url}/v2/products/{product_id}', headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+
 def get_access_token(client_id, url=MOLTIN_URL):
     data = {
         'client_id': client_id,
@@ -79,6 +88,7 @@ def main():
     add_item_to_cart(products[1]["id"], 1, store_access_token, base_url)
     cart = get_cart(store_access_token, base_url)
     cart_items = get_cart_items(store_access_token, base_url)
+    product_details = get_product_details(store_access_token, products[1]["id"])
 
 
 if __name__ == '__main__':
