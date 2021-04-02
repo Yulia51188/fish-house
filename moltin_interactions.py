@@ -21,7 +21,7 @@ def get_product_details(token, product_id, url=MOLTIN_URL):
     }
     response = requests.get(f'{url}/v2/products/{product_id}', headers=headers)
     response.raise_for_status()
-    return response.json()
+    return response.json()["data"]
 
 
 def get_access_token(client_id, url=MOLTIN_URL):
