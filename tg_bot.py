@@ -39,7 +39,7 @@ def start(bot, update):
     keyboard = get_products_keyboard(get_store_token())
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
-    return "BUTTON"
+    return "HANDLE_MENU"
 
 
 def handle_button_click(bot, update):
@@ -49,6 +49,17 @@ def handle_button_click(bot, update):
                           chat_id=query.message.chat_id,
                           message_id=query.message.message_id)
     return "ECHO"
+
+
+def handle_menu(bot, update):
+    query = update.callback_query
+    product_id = query.data
+    bot.edit_message_text(
+        text=f"Product ID is: {product_id}",
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id,
+    )
+    return "START"
 
 
 def echo(bot, update):
@@ -95,6 +106,7 @@ def handle_users_reply(bot, update):
         'START': start,
         'ECHO': echo,
         'BUTTON': handle_button_click,
+        'HANDLE_MENU': handle_menu,
     }
     state_handler = states_functions[user_state]
     # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
