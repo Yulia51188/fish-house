@@ -14,6 +14,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater
 from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler,
                             MessageHandler)
+from textwrap import dedent
+
 
 _database = None
 _store_token = None
@@ -54,12 +56,26 @@ def handle_button_click(bot, update):
 def handle_menu(bot, update):
     query = update.callback_query
     product_id = query.data
+    product = moltin.get_product_details(get_store_token(), product_id)
     bot.edit_message_text(
-        text=f"Product ID is: {product_id}",
+        text=create_product_message(product),
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
     )
     return "START"
+
+
+def create_product_message(product):
+    price = product["meta"]["display_price"]["with_tax"]["formatted"]
+    message = f'''
+        {product["name"]}\n
+        {price} per {product["weight"]["kg"]} kg
+        {product["meta"]["stock"]["level"]} items on stock\n
+        {product["description"]}
+
+    '''
+    logger.info(dedent(message))
+    return dedent(message)
 
 
 def echo(bot, update):
