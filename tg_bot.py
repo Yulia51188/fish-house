@@ -44,30 +44,36 @@ def start(bot, update):
     return "HANDLE_MENU"
 
 
-def handle_button_click(bot, update):
-    query = update.callback_query
-
-    bot.edit_message_text(text="Selected option: {}".format(query.data),
-                          chat_id=query.message.chat_id,
-                          message_id=query.message.message_id)
-    return "ECHO"
+def handle_description(bot, update):
+    if update.callback_query.data == 'back':
+        keyboard = get_products_keyboard(get_store_token())
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.callback_query.message.reply_text('Please choose:',
+                                                    reply_markup=reply_markup)
+        return "HANDLE_MENU"
 
 
 def handle_menu(bot, update):
     query = update.callback_query
     product_id = query.data
     product = moltin.get_product_details(get_store_token(), product_id)
+
     image_url = moltin.get_main_image_url(get_store_token(), product)
+
+    keyboard = [[InlineKeyboardButton("Назад", callback_data='back')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     bot.send_photo(
         chat_id=query.message.chat_id,
         photo=image_url,
         caption=create_product_message(product),
+        reply_markup=reply_markup,
     )
     bot.delete_message(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id
     )
-    return "START"
+    return "HANDLE_DESCRIPTION"
 
 
 def create_product_message(product):
@@ -125,8 +131,9 @@ def handle_users_reply(bot, update):
     states_functions = {
         'START': start,
         'ECHO': echo,
-        'BUTTON': handle_button_click,
         'HANDLE_MENU': handle_menu,
+        'HANDLE_DESCRIPTION': handle_backward,
+
     }
     state_handler = states_functions[user_state]
     # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
