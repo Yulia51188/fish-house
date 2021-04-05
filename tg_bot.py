@@ -57,10 +57,15 @@ def handle_menu(bot, update):
     query = update.callback_query
     product_id = query.data
     product = moltin.get_product_details(get_store_token(), product_id)
-    bot.edit_message_text(
-        text=create_product_message(product),
+    image_url = moltin.get_main_image_url(get_store_token(), product)
+    bot.send_photo(
         chat_id=query.message.chat_id,
-        message_id=query.message.message_id,
+        photo=image_url,
+        caption=create_product_message(product),
+    )
+    bot.delete_message(
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id
     )
     return "START"
 
@@ -72,7 +77,6 @@ def create_product_message(product):
         {price} per {product["weight"]["kg"]} kg
         {product["meta"]["stock"]["level"]} items on stock\n
         {product["description"]}
-
     '''
     logger.info(dedent(message))
     return dedent(message)
