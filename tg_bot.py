@@ -38,7 +38,7 @@ def start(bot, update):
     Бот отвечает пользователю фразой "Привет!" и переводит его в состояние ECHO.
     Теперь в ответ на его команды будет запускаеться хэндлер echo.
     """
-    keyboard = get_products_keyboard(get_store_token())
+    keyboard = get_products_keyboard()
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
     return "HANDLE_MENU"
@@ -46,11 +46,12 @@ def start(bot, update):
 
 def handle_description(bot, update):
     if update.callback_query.data == 'back':
-        keyboard = get_products_keyboard(get_store_token())
+        keyboard = get_products_keyboard()
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.callback_query.message.reply_text('Please choose:',
                                                     reply_markup=reply_markup)
         return "HANDLE_MENU"
+    return "HANDLE_DESCRIPTION"
 
 
 def handle_menu(bot, update):
@@ -60,8 +61,7 @@ def handle_menu(bot, update):
 
     image_url = moltin.get_main_image_url(get_store_token(), product)
 
-    keyboard = [[InlineKeyboardButton("Назад", callback_data='back')]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup(get_description_keyboard(product))
 
     bot.send_photo(
         chat_id=query.message.chat_id,
@@ -84,7 +84,6 @@ def create_product_message(product):
         {product["meta"]["stock"]["level"]} items on stock\n
         {product["description"]}
     '''
-    logger.info(dedent(message))
     return dedent(message)
 
 
@@ -132,7 +131,7 @@ def handle_users_reply(bot, update):
         'START': start,
         'ECHO': echo,
         'HANDLE_MENU': handle_menu,
-        'HANDLE_DESCRIPTION': handle_backward,
+        'HANDLE_DESCRIPTION': handle_description,
 
     }
     state_handler = states_functions[user_state]
@@ -146,13 +145,25 @@ def handle_users_reply(bot, update):
         print(err)
 
 
-def get_products_keyboard(token):
-    products = moltin.get_products(token)
+def get_products_keyboard():
+    products = moltin.get_products(get_store_token())
     buttons = [
         [InlineKeyboardButton(product["name"], callback_data=product["id"])]
         for product in products
     ]
     return buttons
+
+
+def get_description_keyboard(product):
+    quantity_factors = (1, 5, 10)
+    unit_weight = product["weight"]["kg"]
+    quantity_buttons = [
+        InlineKeyboardButton(f"x{factor} ({unit_weight * factor} kg)",
+            callback_data=factor) for factor in quantity_factors
+    ]
+    back_button = [InlineKeyboardButton("Назад", callback_data='back')]
+    keyboard = [quantity_buttons, back_button]
+    return keyboard
 
 
 def get_database_connection():
