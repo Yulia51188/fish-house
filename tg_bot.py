@@ -165,7 +165,8 @@ def get_store_token():
     global _store_token
     if _store_token is None:
         client_id = os.getenv("CLIENT_ID")
-        _store_token = moltin.get_access_token(client_id)
+        client_secret = os.getenv("CLIENT_SECRET")
+        _store_token = moltin.get_credentials(client_id, client_secret)
         logger.info(f'Store token is received {_store_token}')
     return _store_token
 
