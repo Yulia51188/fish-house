@@ -133,7 +133,7 @@ def set_main_image(token, product_id, image_id, url=MOLTIN_URL):
     return response.json()
 
 
-def download_file(token, file_id, url=MOLTIN_URL):
+def get_file(token, file_id, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
@@ -142,7 +142,12 @@ def download_file(token, file_id, url=MOLTIN_URL):
         headers=headers,
     )
     response.raise_for_status()
-    return response.json()
+    return response.json()["data"]
+
+
+def get_main_image_url(token, product):
+    image_id = product["relationships"]["main_image"]["data"]["id"]
+    return get_file(token, image_id)["link"]["href"]
 
 
 def main():
@@ -151,10 +156,11 @@ def main():
     client_secret = os.getenv("CLIENT_SECRET")
     base_url = os.getenv("MOLTIN_API_BASE_URL", default=MOLTIN_URL)
     store_access_token = get_credentials(client_id, client_secret)
-    products = get_products(store_access_token, base_url)
-    treska_id = upload_file(store_access_token, 'Images/forel.jpg')["id"]
-    main_image = set_main_image(store_access_token, products[2]["id"], treska_id)
-    print(main_image)
+    product = get_product_details(store_access_token, "03e5f7d3-5806-4022-af80-bc3a32e184c2")
+    image_id = product["relationships"]["main_image"]["data"]
+    print(image_id)
+    image_url = get_file(store_access_token, image_id["id"])["link"]["href"]
+    print(image_url)
 
 
 if __name__ == '__main__':
