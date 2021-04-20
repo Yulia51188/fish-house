@@ -99,7 +99,6 @@ def upload_file(token, file_path, public=True, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
-    print(str(public).lower())
     with open(file_path, 'rb') as file_obj:
         files = {
             "file": file_obj,
