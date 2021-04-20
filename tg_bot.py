@@ -26,6 +26,12 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger('fish_store')
 
 
+CALLBACKS = {
+    "BACK": 'back',
+    "CART": 'cart',
+}
+
+
 def handle_error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
@@ -45,11 +51,15 @@ def start(bot, update):
 
 
 def handle_description(bot, update):
-    if update.callback_query.data == 'back':
+    if update.callback_query.data == CALLBACKS["BACK"]:
         keyboard = get_products_keyboard()
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.callback_query.message.reply_text('Please choose:',
                                                     reply_markup=reply_markup)
+        bot.delete_message(
+            chat_id=update.callback_query.message.chat_id,
+            message_id=update.callback_query.message.message_id
+        )
         return "HANDLE_MENU"
     product_id, quantity = update.callback_query.data.split('\t')
     cart_id = update.callback_query.message.chat_id
@@ -80,10 +90,12 @@ def handle_description(bot, update):
 def handle_menu(bot, update):
     query = update.callback_query
     product_id = query.data
+    logger.info(product_id)
+    if product_id == CALLBACKS["CART"]:
+        query.message.reply_text(f'Корзина: {query.message.chat_id}')
+        return "HANDLE_MENU"
     product = moltin.get_product_details(get_store_token(), product_id)
-
     image_url = moltin.get_main_image_url(get_store_token(), product)
-
     reply_markup = InlineKeyboardMarkup(get_description_keyboard(product))
     logger.info('Create keyboard')
     bot.send_photo(
@@ -174,6 +186,9 @@ def get_products_keyboard():
         [InlineKeyboardButton(product["name"], callback_data=product["id"])]
         for product in products
     ]
+    buttons.append([InlineKeyboardButton('Корзина',
+        callback_data=CALLBACKS["CART"])])
+    logger.info(buttons)
     return buttons
 
 
@@ -186,7 +201,8 @@ def get_description_keyboard(product):
         button_text = f"x{factor} ({unit_weight * factor} kg)"
         quantity_buttons.append(InlineKeyboardButton(button_text,
             callback_data=callback_data))
-    back_button = [InlineKeyboardButton("Назад", callback_data='back')]
+    back_button = [InlineKeyboardButton("Назад",
+        callback_data=CALLBACKS["BACK"])]
     keyboard = [quantity_buttons, back_button]
     return keyboard
 
