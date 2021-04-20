@@ -4,10 +4,10 @@
 python-telegram-bot==11.1.0
 redis==3.2.1
 """
-import os
 import logging
-import redis
 import moltin_interactions as moltin
+import os
+import redis
 
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
