@@ -62,7 +62,7 @@ def handle_menu(bot, update):
     image_url = moltin.get_main_image_url(get_store_token(), product)
 
     reply_markup = InlineKeyboardMarkup(get_description_keyboard(product))
-
+    logger.info('Create keyboard')
     bot.send_photo(
         chat_id=query.message.chat_id,
         photo=image_url,
