@@ -126,9 +126,6 @@ def set_main_image(token, product_id, image_id, url=MOLTIN_URL):
 
         }
     }
-    print(headers)
-    print(payload)
-    print(f'URL: {url}/v2/products/{product_id}/relationships/main-image')
     response = requests.post(
         f'{url}/v2/products/{product_id}/relationships/main-image',
         headers=headers,
