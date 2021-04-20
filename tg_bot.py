@@ -23,7 +23,7 @@ _store_token = None
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('fish_store')
 
 
 def handle_error(bot, update, error):
