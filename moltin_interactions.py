@@ -92,7 +92,7 @@ def get_cart_items(token, cart_id, url=MOLTIN_URL):
         headers=headers
     )
     response.raise_for_status()
-    return response.json()
+    return response.json()["data"]
 
 
 def upload_file(token, file_path, public=True, url=MOLTIN_URL):
