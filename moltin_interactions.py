@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 MOLTIN_URL = 'https://api.moltin.com'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 logger = logging.getLogger('fish_store')
 
 
