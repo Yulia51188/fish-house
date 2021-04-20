@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 MOLTIN_URL = 'https://api.moltin.com'
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 logger = logging.getLogger('fish_store')
 
 
@@ -151,16 +151,32 @@ def get_main_image_url(token, product):
     return get_file(token, image_id)["link"]["href"]
 
 
+def get_quantity_in_cart(token, product_id, cart_id):
+    products = get_cart_items(token, cart_id)
+    desired_product_in_cart = [product for product in products
+                                if product["product_id"] == product_id]
+    if not any(desired_product_in_cart):
+        return 0
+    return desired_product_in_cart[0]["quantity"]
+
+
 def main():
     load_dotenv()
     client_id = os.getenv("CLIENT_ID")
     client_secret = os.getenv("CLIENT_SECRET")
     base_url = os.getenv("MOLTIN_API_BASE_URL", default=MOLTIN_URL)
     store_access_token = get_credentials(client_id, client_secret)
-    product = get_product_details(store_access_token, "03e5f7d3-5806-4022-af80-bc3a32e184c2")
-    print('PRODUCT\n', product)
-    print('CART\n', get_cart(store_access_token, "test12345"))
-    print('ADD RESULT\n', add_item_to_cart(product["id"], 1, "test12345", store_access_token))
+    product = get_product_details(
+        store_access_token,
+        "03e5f7d3-5806-4022-af80-bc3a32e184c2"
+    )
+    logger.debug('PRODUCT\n', product)
+    quantity = get_quantity_in_cart(
+        store_access_token,
+        product["id"],
+        "test12345"
+    )
+    logger.debug('QUANTITY IN CART\n', quantity)
 
 
 if __name__ == '__main__':
