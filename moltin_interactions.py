@@ -50,7 +50,7 @@ def get_credentials(client_id, client_secret, url=MOLTIN_URL):
     return response.json()["access_token"]
 
 
-def add_item_to_cart(item_id, quantity, reference, token, url=MOLTIN_URL):
+def add_item_to_cart(item_id, quantity, cart_id, token, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -63,7 +63,7 @@ def add_item_to_cart(item_id, quantity, reference, token, url=MOLTIN_URL):
         }
     }
     response = requests.post(
-        f'{url}/v2/carts/{reference}/items',
+        f'{url}/v2/carts/{cart_id}/items',
         headers=headers,
         json=payload
     )
@@ -71,24 +71,24 @@ def add_item_to_cart(item_id, quantity, reference, token, url=MOLTIN_URL):
     return response.json()["data"]
 
 
-def get_cart(token, reference, url=MOLTIN_URL):
+def get_cart(token, cart_id, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
     response = requests.get(
-        f'{url}/v2/carts/{reference}',
+        f'{url}/v2/carts/{cart_id}',
         headers=headers
     )
     response.raise_for_status()
     return response.json()
 
 
-def get_cart_items(token, url=MOLTIN_URL):
+def get_cart_items(token, cart_id, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
     response = requests.get(
-        f'{url}/v2/carts/:reference/items',
+        f'{url}/v2/carts/{cart_id}/items',
         headers=headers
     )
     response.raise_for_status()
