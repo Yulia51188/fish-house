@@ -51,6 +51,29 @@ def handle_description(bot, update):
         update.callback_query.message.reply_text('Please choose:',
                                                     reply_markup=reply_markup)
         return "HANDLE_MENU"
+    product_id, quantity = update.callback_query.data.split('\t')
+    cart_id = update.callback_query.message.chat_id
+    old_quantity_in_cart = moltin.get_quantity_in_cart(
+        get_store_token(),
+        product_id,
+        cart_id,
+    )
+    add_to_cart_result = moltin.add_item_to_cart(
+        product_id,
+        int(quantity),
+        cart_id,
+        get_store_token()
+    )
+    new_quantity_in_cart = moltin.get_quantity_in_cart(
+        get_store_token(),
+        product_id,
+        cart_id,
+    )
+    if not (new_quantity_in_cart - old_quantity_in_cart) == int(quantity):
+        logger.error(f'Failed to add product {product_id} x {quantity} '
+                        f'to cart {cart_id} with error: {add_to_cart_result}')
+    else:
+        logger.info(f'Add product {product_id} x {quantity} to cart {cart_id}')
     return "HANDLE_DESCRIPTION"
 
 
