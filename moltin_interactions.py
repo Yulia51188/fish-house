@@ -1,9 +1,14 @@
+import logging
 import os
 import requests
 
 from dotenv import load_dotenv
 
 MOLTIN_URL = 'https://api.moltin.com'
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+logger = logging.getLogger('fish_store')
 
 
 def get_products(token, url=MOLTIN_URL):
