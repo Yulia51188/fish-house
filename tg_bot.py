@@ -201,10 +201,15 @@ def get_description_keyboard(product):
         button_text = f"x{factor} ({unit_weight * factor} kg)"
         quantity_buttons.append(InlineKeyboardButton(button_text,
             callback_data=callback_data))
-    back_button = [InlineKeyboardButton("Назад",
+    back_button = [InlineKeyboardButton("Return",
         callback_data=CALLBACKS["BACK"])]
     keyboard = [quantity_buttons, back_button]
     return keyboard
+
+
+def get_cart_keyboard():
+    buttons = [InlineKeyboardButton("Return", callback_data=CALLBACKS["BACK"])]
+    return buttons
 
 
 def get_database_connection():
