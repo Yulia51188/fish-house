@@ -50,7 +50,7 @@ def get_credentials(client_id, client_secret, url=MOLTIN_URL):
     return response.json()["access_token"]
 
 
-def add_item_to_cart(item_id, quantity, token, url=MOLTIN_URL):
+def add_item_to_cart(item_id, quantity, reference, token, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
@@ -63,7 +63,7 @@ def add_item_to_cart(item_id, quantity, token, url=MOLTIN_URL):
         }
     }
     response = requests.post(
-        f'{url}/v2/carts/:reference/items',
+        f'{url}/v2/carts/{reference}/items',
         headers=headers,
         json=payload
     )
@@ -71,12 +71,12 @@ def add_item_to_cart(item_id, quantity, token, url=MOLTIN_URL):
     return response.json()["data"]
 
 
-def get_cart(token, url=MOLTIN_URL):
+def get_cart(token, reference, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
     }
     response = requests.get(
-        f'{url}/v2/carts/:reference',
+        f'{url}/v2/carts/{reference}',
         headers=headers
     )
     response.raise_for_status()
@@ -162,10 +162,9 @@ def main():
     base_url = os.getenv("MOLTIN_API_BASE_URL", default=MOLTIN_URL)
     store_access_token = get_credentials(client_id, client_secret)
     product = get_product_details(store_access_token, "03e5f7d3-5806-4022-af80-bc3a32e184c2")
-    image_id = product["relationships"]["main_image"]["data"]
-    print(image_id)
-    image_url = get_file(store_access_token, image_id["id"])["link"]["href"]
-    print(image_url)
+    print('PRODUCT\n', product)
+    print('CART\n', get_cart(store_access_token, "test12345"))
+    print('ADD RESULT\n', add_item_to_cart(product["id"], 1, "test12345", store_access_token))
 
 
 if __name__ == '__main__':
