@@ -157,10 +157,12 @@ def get_products_keyboard():
 def get_description_keyboard(product):
     quantity_factors = (1, 5, 10)
     unit_weight = product["weight"]["kg"]
-    quantity_buttons = [
-        InlineKeyboardButton(f"x{factor} ({unit_weight * factor} kg)",
-            callback_data=factor) for factor in quantity_factors
-    ]
+    quantity_buttons = []
+    for factor in quantity_factors:
+        callback_data = f'{product["id"]}\t{factor}'
+        button_text = f"x{factor} ({unit_weight * factor} kg)"
+        quantity_buttons.append(InlineKeyboardButton(button_text,
+            callback_data=callback_data))
     back_button = [InlineKeyboardButton("Назад", callback_data='back')]
     keyboard = [quantity_buttons, back_button]
     return keyboard
