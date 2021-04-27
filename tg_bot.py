@@ -29,6 +29,7 @@ logger = logging.getLogger('fish_store')
 CALLBACKS = {
     "BACK": 'back',
     "CART": 'cart',
+    "DELETE_ALL": 'delete_all',
 }
 
 
@@ -92,8 +93,17 @@ def handle_menu(bot, update):
     product_id = query.data
     logger.info(product_id)
     if product_id == CALLBACKS["CART"]:
-        query.message.reply_text(f'Корзина: {query.message.chat_id}')
-        return "HANDLE_MENU"
+        reply_markup = InlineKeyboardMarkup([get_cart_keyboard()])
+        cart_message = create_cart_message(query.message.chat_id)
+        query.message.reply_text(
+            cart_message,
+            reply_markup=reply_markup,
+        )
+        bot.delete_message(
+            chat_id=query.message.chat_id,
+            message_id=query.message.message_id
+        )
+        return "HANDLE_CART"
     product = moltin.get_product_details(get_store_token(), product_id)
     image_url = moltin.get_main_image_url(get_store_token(), product)
     reply_markup = InlineKeyboardMarkup(get_description_keyboard(product))
@@ -111,6 +121,19 @@ def handle_menu(bot, update):
     return "HANDLE_DESCRIPTION"
 
 
+def handle_cart(bot, update):
+    if update.callback_query.data == CALLBACKS["BACK"]:
+        keyboard = get_products_keyboard()
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.callback_query.message.reply_text('Please choose:',
+                                                    reply_markup=reply_markup)
+        bot.delete_message(
+            chat_id=update.callback_query.message.chat_id,
+            message_id=update.callback_query.message.message_id
+        )
+        return "HANDLE_MENU"
+
+
 def create_product_message(product):
     price = product["meta"]["display_price"]["with_tax"]["formatted"]
     message = f'''
@@ -119,6 +142,35 @@ def create_product_message(product):
         {product["meta"]["stock"]["level"]} items on stock\n
         {product["description"]}
     '''
+    return dedent(message)
+
+
+def create_product_in_cart_message(product):
+    product_details = moltin.get_product_details(
+        get_store_token(),
+        product["product_id"]
+    )
+    price = product["meta"]["display_price"]["with_tax"]["unit"]["formatted"]
+    cost = product["meta"]["display_price"]["with_tax"]["value"]["formatted"]
+    unit_weight = product_details["weight"]["kg"]
+    total_weight = float(product["quantity"]) * unit_weight
+    message = f'''
+        {product["name"]}
+        {product["description"]}
+        {price} per unit ({unit_weight} kg)
+        {total_weight} kg ({product["quantity"]} units) in cart for {cost}
+    '''
+    return dedent(message)
+
+
+def create_cart_message(cart_id):
+    cart = moltin.get_cart(get_store_token(), cart_id)
+    logger.info(f"Cart {cart_id} is received")
+    total_cost = cart["meta"]["display_price"]["with_tax"]["formatted"]
+    products = moltin.get_cart_items(get_store_token(), cart_id)
+    products_description = ''.join([create_product_in_cart_message(product) 
+                for product in products])
+    message = f'{products_description}\nTotal: {total_cost}'
     return dedent(message)
 
 
@@ -167,6 +219,7 @@ def handle_users_reply(bot, update):
         'ECHO': echo,
         'HANDLE_MENU': handle_menu,
         'HANDLE_DESCRIPTION': handle_description,
+        'HANDLE_CART': handle_cart,
 
     }
     state_handler = states_functions[user_state]
@@ -176,8 +229,8 @@ def handle_users_reply(bot, update):
     try:
         next_state = state_handler(bot, update)
         db.set(chat_id, next_state)
-    except Exception as err:
-        print(err)
+    except Exception as error:
+        logger.error(error)
 
 
 def get_products_keyboard():
@@ -186,7 +239,7 @@ def get_products_keyboard():
         [InlineKeyboardButton(product["name"], callback_data=product["id"])]
         for product in products
     ]
-    buttons.append([InlineKeyboardButton('Корзина',
+    buttons.append([InlineKeyboardButton('Go to cart',
         callback_data=CALLBACKS["CART"])])
     logger.info(buttons)
     return buttons
@@ -201,15 +254,24 @@ def get_description_keyboard(product):
         button_text = f"x{factor} ({unit_weight * factor} kg)"
         quantity_buttons.append(InlineKeyboardButton(button_text,
             callback_data=callback_data))
-    back_button = [InlineKeyboardButton("Return",
+    back_button = [InlineKeyboardButton("Return to menu",
         callback_data=CALLBACKS["BACK"])]
     keyboard = [quantity_buttons, back_button]
     return keyboard
 
 
 def get_cart_keyboard():
-    buttons = [InlineKeyboardButton("Return", callback_data=CALLBACKS["BACK"])]
-    return buttons
+    base_buttons = [
+        InlineKeyboardButton(
+            "Delete_all_products",
+            callback_data=CALLBACKS["DELETE_ALL"]
+        ),
+        InlineKeyboardButton(
+            "Return to menu",
+            callback_data=CALLBACKS["BACK"]
+        ),
+    ]
+    return base_buttons
 
 
 def get_database_connection():
