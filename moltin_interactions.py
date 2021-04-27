@@ -184,6 +184,40 @@ def delete_cart_item(token, cart_id, item_id, url=MOLTIN_URL):
     return response.text
 
 
+def create_customer(token, email, name='No name', password=None, url=MOLTIN_URL):
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "data": {
+            "type": "customer",
+            "name": name,
+            "email": email,
+            "password": password or email,
+        }
+    }
+    response = requests.post(
+        f'{url}/v2/customers',
+        headers=headers,
+        json=payload,
+    )
+    response.raise_for_status()
+    return response.json()["data"]
+
+
+def get_customer(token, customer_id, url=MOLTIN_URL):
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    response = requests.get(
+        f'{url}/v2/customers/{customer_id}',
+        headers=headers,
+    )
+    response.raise_for_status()
+    return response.json()["data"]
+
+
 def main():
     load_dotenv()
     client_id = os.getenv("CLIENT_ID")
@@ -201,6 +235,8 @@ def main():
         "test12345"
     )
     logger.debug('QUANTITY IN CART\n', quantity)
+    customer_id = create_customer(store_access_token, 'ajhg045@khj.com')["id"]
+    logger.debug(get_customer(store_access_token, customer_id))
 
 
 if __name__ == '__main__':
