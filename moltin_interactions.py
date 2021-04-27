@@ -160,6 +160,30 @@ def get_quantity_in_cart(token, product_id, cart_id):
     return desired_product_in_cart[0]["quantity"]
 
 
+def delete_cart_items(token, cart_id, url=MOLTIN_URL):
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    response = requests.delete(
+        f'{url}/v2/carts/{cart_id}/items',
+        headers=headers,
+    )
+    response.raise_for_status()
+    return response.text
+
+
+def delete_cart_item(token, cart_id, item_id, url=MOLTIN_URL):
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    response = requests.delete(
+        f'{url}/v2/carts/{cart_id}/items/{item_id}',
+        headers=headers,
+    )
+    response.raise_for_status()
+    return response.text
+
+
 def main():
     load_dotenv()
     client_id = os.getenv("CLIENT_ID")
