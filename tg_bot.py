@@ -30,6 +30,7 @@ CALLBACKS = {
     "BACK": 'back',
     "CART": 'cart',
     "DELETE_ALL": 'delete_all',
+    "BUY": 'buy',
 }
 
 
@@ -123,6 +124,10 @@ def handle_cart(bot, update):
             message_id=update.callback_query.message.message_id
         )
         return "HANDLE_MENU"
+    if update.callback_query.data == CALLBACKS["BUY"]:
+        #TODO: go to checkout
+        logger.info('Go to checkout')
+        return "HANDLE_CART"
     cart_id = update.callback_query.message.chat_id
     if update.callback_query.data == CALLBACKS["DELETE_ALL"]:
         moltin.delete_cart_items(
@@ -301,12 +306,16 @@ def get_cart_keyboard(cart_id):
         "Delete all items",
         callback_data=CALLBACKS["DELETE_ALL"]
     )]]
+    payment_button = [[InlineKeyboardButton(
+        "Buy",
+        callback_data=CALLBACKS["BUY"]
+    )]]
     product_buttons = [
         [InlineKeyboardButton(f'Remove {product["name"]}',
             callback_data=product["id"])]
         for product in products
     ]
-    return [*product_buttons, *delete_button, *back_button]
+    return [*product_buttons, *delete_button, *payment_button, *back_button]
 
 
 def get_database_connection():
