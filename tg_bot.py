@@ -125,9 +125,9 @@ def handle_cart(bot, update):
         )
         return "HANDLE_MENU"
     if update.callback_query.data == CALLBACKS["BUY"]:
-        #TODO: go to checkout
+        update.callback_query.message.edit_text('Please input your email')
         logger.info('Go to checkout')
-        return "HANDLE_CART"
+        return "WAITING_EMAIL"
     cart_id = update.callback_query.message.chat_id
     if update.callback_query.data == CALLBACKS["DELETE_ALL"]:
         moltin.delete_cart_items(
@@ -144,6 +144,13 @@ def handle_cart(bot, update):
         logger.info(f'Delete item {update.callback_query.data} in cart {cart_id}')
     send_cart_message(bot, update)
     return "HANDLE_CART"
+
+
+def handle_waiting_email(bot, update):
+    user_email = update.message.text
+    update.message.reply_text(f'Check you email:\n{user_email}')
+    #TO DO: go to new state
+    return "WAITING_EMAIL"
 
 
 def create_product_message(product):
@@ -234,6 +241,7 @@ def handle_users_reply(bot, update):
         'HANDLE_MENU': handle_menu,
         'HANDLE_DESCRIPTION': handle_description,
         'HANDLE_CART': handle_cart,
+        'WAITING_EMAIL': handle_waiting_email,
 
     }
     state_handler = states_functions[user_state]
