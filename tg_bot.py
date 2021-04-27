@@ -260,14 +260,14 @@ def send_cart_message(bot, update):
     reply_markup = InlineKeyboardMarkup(get_cart_keyboard(cart_id))
     logger.info(f"Cart keyboard is created: {reply_markup}")
     cart_message = create_cart_message(cart_id)
-    update.callback_query.message.reply_text(
+    update.callback_query.message.edit_text(
         cart_message,
         reply_markup=reply_markup,
     )
-    bot.delete_message(
-        chat_id=update.callback_query.message.chat_id,
-        message_id=update.callback_query.message.message_id
-    )
+    # bot.delete_message(
+    #     chat_id=update.callback_query.message.chat_id,
+    #     message_id=update.callback_query.message.message_id
+    # )
     return
 
 
