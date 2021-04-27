@@ -264,10 +264,6 @@ def send_cart_message(bot, update):
         cart_message,
         reply_markup=reply_markup,
     )
-    # bot.delete_message(
-    #     chat_id=update.callback_query.message.chat_id,
-    #     message_id=update.callback_query.message.message_id
-    # )
     return
 
 
