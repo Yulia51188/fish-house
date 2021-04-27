@@ -93,16 +93,7 @@ def handle_menu(bot, update):
     product_id = query.data
     logger.info(product_id)
     if product_id == CALLBACKS["CART"]:
-        reply_markup = InlineKeyboardMarkup([get_cart_keyboard()])
-        cart_message = create_cart_message(query.message.chat_id)
-        query.message.reply_text(
-            cart_message,
-            reply_markup=reply_markup,
-        )
-        bot.delete_message(
-            chat_id=query.message.chat_id,
-            message_id=query.message.message_id
-        )
+        send_cart_message(bot, update)
         return "HANDLE_CART"
     product = moltin.get_product_details(get_store_token(), product_id)
     image_url = moltin.get_main_image_url(get_store_token(), product)
@@ -132,6 +123,22 @@ def handle_cart(bot, update):
             message_id=update.callback_query.message.message_id
         )
         return "HANDLE_MENU"
+    cart_id = update.callback_query.message.chat_id
+    if update.callback_query.data == CALLBACKS["DELETE_ALL"]:
+        moltin.delete_cart_items(
+            get_store_token(),
+            cart_id,
+        )
+        logger.info(f'Delete all items in cart {cart_id}')
+    else:
+        moltin.delete_cart_item(
+            get_store_token(),
+            cart_id,
+            update.callback_query.data,
+        )
+        logger.info(f'Delete item {update.callback_query.data} in cart {cart_id}')
+    send_cart_message(bot, update)
+    return "HANDLE_CART"
 
 
 def create_product_message(product):
@@ -166,8 +173,10 @@ def create_product_in_cart_message(product):
 def create_cart_message(cart_id):
     cart = moltin.get_cart(get_store_token(), cart_id)
     logger.info(f"Cart {cart_id} is received")
-    total_cost = cart["meta"]["display_price"]["with_tax"]["formatted"]
     products = moltin.get_cart_items(get_store_token(), cart_id)
+    if not any(products):
+        return 'Your cart is empty'
+    total_cost = cart["meta"]["display_price"]["with_tax"]["formatted"]
     products_description = ''.join([create_product_in_cart_message(product) 
                 for product in products])
     message = f'{products_description}\nTotal: {total_cost}'
@@ -233,6 +242,22 @@ def handle_users_reply(bot, update):
         logger.error(error)
 
 
+def send_cart_message(bot, update):
+    cart_id = update.callback_query.message.chat_id
+    reply_markup = InlineKeyboardMarkup(get_cart_keyboard(cart_id))
+    logger.info(f"Cart keyboard is created: {reply_markup}")
+    cart_message = create_cart_message(cart_id)
+    update.callback_query.message.reply_text(
+        cart_message,
+        reply_markup=reply_markup,
+    )
+    bot.delete_message(
+        chat_id=update.callback_query.message.chat_id,
+        message_id=update.callback_query.message.message_id
+    )
+    return
+
+
 def get_products_keyboard():
     products = moltin.get_products(get_store_token())
     buttons = [
@@ -260,18 +285,28 @@ def get_description_keyboard(product):
     return keyboard
 
 
-def get_cart_keyboard():
-    base_buttons = [
-        InlineKeyboardButton(
-            "Delete_all_products",
-            callback_data=CALLBACKS["DELETE_ALL"]
-        ),
+def get_cart_keyboard(cart_id):
+    logger.info('Start to create cart keyboard')
+    back_button = [[
         InlineKeyboardButton(
             "Return to menu",
             callback_data=CALLBACKS["BACK"]
-        ),
+        )
+    ]]
+    products = moltin.get_cart_items(get_store_token(), cart_id)
+    if not any(products):
+        logger.info('No items in cart, return 1 button')
+        return back_button
+    delete_button = [[InlineKeyboardButton(
+        "Delete all items",
+        callback_data=CALLBACKS["DELETE_ALL"]
+    )]]
+    product_buttons = [
+        [InlineKeyboardButton(f'Remove {product["name"]}',
+            callback_data=product["id"])]
+        for product in products
     ]
-    return base_buttons
+    return [*product_buttons, *delete_button, *back_button]
 
 
 def get_database_connection():
