@@ -148,9 +148,15 @@ def handle_cart(bot, update):
 
 def handle_waiting_email(bot, update):
     user_email = update.message.text
-    update.message.reply_text(f'Check you email:\n{user_email}')
-    #TO DO: go to new state
-    return "WAITING_EMAIL"
+    customer = moltin.create_customer(get_store_token(), user_email)
+    update.message.reply_text(
+        f'Your email is: {user_email}\nYour customer ID is: {customer["id"]}'
+    )
+    return "ORDERING"
+
+
+def handle_ordering(bot, update):
+    pass
 
 
 def create_product_message(product):
@@ -242,7 +248,7 @@ def handle_users_reply(bot, update):
         'HANDLE_DESCRIPTION': handle_description,
         'HANDLE_CART': handle_cart,
         'WAITING_EMAIL': handle_waiting_email,
-
+        'ORDERING': handle_ordering,
     }
     state_handler = states_functions[user_state]
     # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
