@@ -200,8 +200,29 @@ def create_customer(token, email, name='No name', password=None, url=MOLTIN_URL)
         headers=headers,
         json=payload,
     )
+    if response.status_code == 409:
+        logging.warning(f'Client with email "{email}" is already exists')
+        return get_customer_by_email(token, email)
     response.raise_for_status()
-    return response.json()["data"]
+    customer = response.json()["data"]
+    logging.info(f"Create a new customer with email {email}")
+    return customer
+
+
+def get_customer_by_email(token, email, url=MOLTIN_URL):
+    headers = {
+        "Authorization": f"Bearer {token}",
+    }
+    params = {
+        "filter": f"eq(email,{email})"
+    }
+    response = requests.get(
+        f'{url}/v2/customers',
+        headers=headers,
+        params=params,
+    )
+    response.raise_for_status()
+    return response.json()["data"][0]
 
 
 def get_customer(token, customer_id, url=MOLTIN_URL):
@@ -218,23 +239,18 @@ def get_customer(token, customer_id, url=MOLTIN_URL):
 
 def main():
     load_dotenv()
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.DEBUG)
+
     client_id = os.getenv("CLIENT_ID")
     client_secret = os.getenv("CLIENT_SECRET")
-    base_url = os.getenv("MOLTIN_API_BASE_URL", default=MOLTIN_URL)
     store_access_token = get_credentials(client_id, client_secret)
-    product = get_product_details(
-        store_access_token,
-        "03e5f7d3-5806-4022-af80-bc3a32e184c2"
-    )
-    logger.debug('PRODUCT\n', product)
-    quantity = get_quantity_in_cart(
-        store_access_token,
-        product["id"],
-        "test12345"
-    )
-    logger.debug('QUANTITY IN CART\n', quantity)
-    customer_id = create_customer(store_access_token, 'ajhg045@khj.com')["id"]
-    logger.debug(get_customer(store_access_token, customer_id))
+
+    email = 'jh045@kasdhj.com'
+    customer_id = create_customer(store_access_token, email)["id"]
+    logger.debug(customer_id)
+    customer = get_customer(store_access_token, customer_id)
+    logger.debug(customer)
 
 
 if __name__ == '__main__':
