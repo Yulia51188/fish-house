@@ -1,8 +1,6 @@
 import logging
-import os
 import requests
 
-from dotenv import load_dotenv
 
 MOLTIN_URL = 'https://api.moltin.com'
 
@@ -235,23 +233,3 @@ def get_customer(token, customer_id, url=MOLTIN_URL):
     )
     response.raise_for_status()
     return response.json()["data"]
-
-
-def main():
-    load_dotenv()
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.DEBUG)
-
-    client_id = os.getenv("CLIENT_ID")
-    client_secret = os.getenv("CLIENT_SECRET")
-    store_access_token = get_credentials(client_id, client_secret)
-
-    email = 'jh045@kasdhj.com'
-    customer_id = create_customer(store_access_token, email)["id"]
-    logger.debug(customer_id)
-    customer = get_customer(store_access_token, customer_id)
-    logger.debug(customer)
-
-
-if __name__ == '__main__':
-    main()
