@@ -199,11 +199,11 @@ def create_customer(token, email, name='No name', password=None, url=MOLTIN_URL)
         json=payload,
     )
     if response.status_code == 409:
-        logging.warning(f'Client with email "{email}" is already exists')
+        logger.warning(f'Client with email "{email}" is already exists')
         return get_customer_by_email(token, email)
     response.raise_for_status()
     customer = response.json()["data"]
-    logging.info(f"Create a new customer with email {email}")
+    logger.info(f"Create a new customer with email {email}")
     return customer
 
 
