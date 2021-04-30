@@ -4,7 +4,7 @@ Fish Store Bot allows choosing products, add to cart and edit it using online bu
 Try it, writing to: Telegram channel @fish_store_edu_bot. The Bot is deployed on [Heroku](heroku.com) and is available to test rigth now!
 
 # Demo
-![tg_bot_demo](Demo/demo_tg_bot.gif)
+![tg_bot_demo](Demo/tg_bot_demo.gif)
 
 # How to install
 To customize bots you need some keys that are:
