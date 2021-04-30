@@ -1,28 +1,20 @@
-"""
-Работает с этими модулями:
-
-python-telegram-bot==11.1.0
-redis==3.2.1
-"""
 import logging
-import moltin_interactions as moltin
 import os
-import redis
+from textwrap import dedent
 
+import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Filters, Updater
-from telegram.ext import (Updater, CommandHandler, CallbackQueryHandler,
-                            MessageHandler)
-from textwrap import dedent
+from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
+                          MessageHandler, Updater)
+
+import moltin_interactions as moltin
 
 
 _database = None
 _store_token = None
 
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
 logger = logging.getLogger('fish_store')
 
 
@@ -35,29 +27,17 @@ CALLBACKS = {
 
 
 def handle_error(bot, update, error):
-    """Log Errors caused by Updates."""
-    logger.warning('Update "%s" caused error "%s"', update, error)
+    logger.error('Update "%s" caused error "%s"', update, error)
 
 
 def start(bot, update):
-    """
-    Хэндлер для состояния START.
-
-    Бот отвечает пользователю фразой "Привет!" и переводит его в состояние ECHO.
-    Теперь в ответ на его команды будет запускаеться хэндлер echo.
-    """
-    keyboard = get_products_keyboard()
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    send_start_menu_message(bot, update)
     return "HANDLE_MENU"
 
 
 def handle_description(bot, update):
     if update.callback_query.data == CALLBACKS["BACK"]:
-        keyboard = get_products_keyboard()
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.callback_query.message.reply_text('Please choose:',
-                                                    reply_markup=reply_markup)
+        send_start_menu_message(bot, update)
         bot.delete_message(
             chat_id=update.callback_query.message.chat_id,
             message_id=update.callback_query.message.message_id
@@ -92,14 +72,12 @@ def handle_description(bot, update):
 def handle_menu(bot, update):
     query = update.callback_query
     product_id = query.data
-    logger.info(product_id)
     if product_id == CALLBACKS["CART"]:
         send_cart_message(bot, update)
         return "HANDLE_CART"
     product = moltin.get_product_details(get_store_token(), product_id)
     image_url = moltin.get_main_image_url(get_store_token(), product)
     reply_markup = InlineKeyboardMarkup(get_description_keyboard(product))
-    logger.info('Create keyboard')
     bot.send_photo(
         chat_id=query.message.chat_id,
         photo=image_url,
@@ -115,10 +93,7 @@ def handle_menu(bot, update):
 
 def handle_cart(bot, update):
     if update.callback_query.data == CALLBACKS["BACK"]:
-        keyboard = get_products_keyboard()
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        update.callback_query.message.reply_text('Please choose:',
-                                                    reply_markup=reply_markup)
+        send_start_menu_message(bot, update)
         bot.delete_message(
             chat_id=update.callback_query.message.chat_id,
             message_id=update.callback_query.message.message_id
@@ -126,7 +101,6 @@ def handle_cart(bot, update):
         return "HANDLE_MENU"
     if update.callback_query.data == CALLBACKS["BUY"]:
         update.callback_query.message.edit_text('Please input your email')
-        logger.info('Go to checkout')
         return "WAITING_EMAIL"
     cart_id = update.callback_query.message.chat_id
     if update.callback_query.data == CALLBACKS["DELETE_ALL"]:
@@ -201,18 +175,6 @@ def create_cart_message(cart_id):
     return dedent(message)
 
 
-def echo(bot, update):
-    """
-    Хэндлер для состояния ECHO.
-
-    Бот отвечает пользователю тем же, что пользователь ему написал.
-    Оставляет пользователя в состоянии ECHO.
-    """
-    users_reply = update.message.text
-    update.message.reply_text(users_reply)
-    return "ECHO"
-
-
 def handle_users_reply(bot, update):
     """
     Функция, которая запускается при любом сообщении от пользователя и решает как его обработать.
@@ -243,7 +205,6 @@ def handle_users_reply(bot, update):
 
     states_functions = {
         'START': start,
-        'ECHO': echo,
         'HANDLE_MENU': handle_menu,
         'HANDLE_DESCRIPTION': handle_description,
         'HANDLE_CART': handle_cart,
@@ -251,9 +212,6 @@ def handle_users_reply(bot, update):
         'ORDERING': handle_ordering,
     }
     state_handler = states_functions[user_state]
-    # Если вы вдруг не заметите, что python-telegram-bot перехватывает ошибки.
-    # Оставляю этот try...except, чтобы код не падал молча.
-    # Этот фрагмент можно переписать.
     try:
         next_state = state_handler(bot, update)
         db.set(chat_id, next_state)
@@ -273,6 +231,17 @@ def send_cart_message(bot, update):
     return
 
 
+def send_start_menu_message(bot, update):
+    keyboard = get_products_keyboard()
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    if update.callback_query:
+        update.callback_query.message.reply_text('Please choose:',
+            reply_markup=reply_markup)
+        return
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    return
+
+
 def get_products_keyboard():
     products = moltin.get_products(get_store_token())
     buttons = [
@@ -281,7 +250,6 @@ def get_products_keyboard():
     ]
     buttons.append([InlineKeyboardButton('Go to cart',
         callback_data=CALLBACKS["CART"])])
-    logger.info(buttons)
     return buttons
 
 
@@ -301,7 +269,6 @@ def get_description_keyboard(product):
 
 
 def get_cart_keyboard(cart_id):
-    logger.info('Start to create cart keyboard')
     back_button = [[
         InlineKeyboardButton(
             "Return to menu",
@@ -310,7 +277,6 @@ def get_cart_keyboard(cart_id):
     ]]
     products = moltin.get_cart_items(get_store_token(), cart_id)
     if not any(products):
-        logger.info('No items in cart, return 1 button')
         return back_button
     delete_button = [[InlineKeyboardButton(
         "Delete all items",
@@ -351,11 +317,12 @@ def get_store_token():
         client_id = os.getenv("CLIENT_ID")
         client_secret = os.getenv("CLIENT_SECRET")
         _store_token = moltin.get_credentials(client_id, client_secret)
-        logger.info(f'Store token is received {_store_token}')
     return _store_token
 
 
 if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
     load_dotenv()
     token = os.getenv("TG_TOKEN")
 
