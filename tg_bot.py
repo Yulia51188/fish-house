@@ -19,10 +19,10 @@ logger = logging.getLogger('fish_store')
 
 
 CALLBACKS = {
-    "BACK": 'back',
-    "CART": 'cart',
-    "DELETE_ALL": 'delete_all',
-    "BUY": 'buy',
+    "BACK": "back",
+    "CART": "cart",
+    "DELETE_ALL": "delete_all",
+    "BUY": "buy",
 }
 
 
@@ -115,7 +115,8 @@ def handle_cart(bot, update):
             cart_id,
             update.callback_query.data,
         )
-        logger.info(f'Delete item {update.callback_query.data} in cart {cart_id}')
+        logger.info(
+            f'Delete item {update.callback_query.data} in cart {cart_id}')
     send_cart_message(bot, update)
     return "HANDLE_CART"
 
@@ -130,6 +131,7 @@ def handle_waiting_email(bot, update):
 
 
 def handle_ordering(bot, update):
+    #TODO: add ordering
     pass
 
 
@@ -170,7 +172,7 @@ def create_cart_message(cart_id):
         return 'Your cart is empty'
     total_cost = cart["meta"]["display_price"]["with_tax"]["formatted"]
     products_description = ''.join([create_product_in_cart_message(product) 
-                for product in products])
+                                    for product in products])
     message = f'{products_description}\nTotal: {total_cost}'
     return dedent(message)
 
@@ -295,9 +297,7 @@ def get_cart_keyboard(cart_id):
 
 
 def get_database_connection():
-    """
-    Возвращает конекшн с базой данных Redis, либо создаёт новый, если он ещё не создан.
-    """
+    """Возвращает конекшн с базой данных Redis, либо создаёт новый, если он ещё не создан."""
     global _database
     if _database is None:
         database_password = os.getenv("DATABASE_PASSWORD", default=None)
@@ -309,9 +309,7 @@ def get_database_connection():
 
 
 def get_store_token():
-    """
-    Возвращает токен CRM магазина, либо запрашивает новый по client_id
-    """
+    """Возвращает токен CRM магазина, либо запрашивает новый по client_id"""
     global _store_token
     if _store_token is None:
         client_id = os.getenv("CLIENT_ID")
@@ -321,11 +319,12 @@ def get_store_token():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.INFO
+    )
     load_dotenv()
     token = os.getenv("TG_TOKEN")
-
     updater = Updater(token)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
