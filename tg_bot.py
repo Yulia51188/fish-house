@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import redis
 from dotenv import load_dotenv
@@ -14,6 +15,7 @@ import moltin_interactions as moltin
 
 _database = None
 _store_token = None
+_token_birthtime = None
 
 
 logger = logging.getLogger('fish_store')
@@ -25,6 +27,7 @@ CALLBACKS = {
     "DELETE_ALL": "delete_all",
     "BUY": "buy",
 }
+TOKEN_LIVETIME = 60000
 
 
 def handle_error(bot, update, error):
@@ -206,10 +209,14 @@ def get_database_connection():
 def get_store_token():
     """Возвращает токен CRM магазина, либо запрашивает новый по client_id"""
     global _store_token
-    if _store_token is None:
+    global _token_birthtime
+    if (_store_token is None or 
+            (time.time() - _token_birthtime) > TOKEN_LIVETIME):
         client_id = os.getenv("CLIENT_ID")
         client_secret = os.getenv("CLIENT_SECRET")
         _store_token = moltin.get_credentials(client_id, client_secret)
+        _token_birthtime = time.time()
+        logger.info(f'Get new client credentials at {_token_birthtime}')
     return _store_token
 
 
