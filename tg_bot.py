@@ -27,7 +27,7 @@ CALLBACKS = {
     "DELETE_ALL": "delete_all",
     "BUY": "buy",
 }
-TOKEN_LIVETIME = 60000
+TOKEN_LIFETIME = 60000
 
 
 def handle_error(bot, update, error):
@@ -211,7 +211,7 @@ def get_store_token():
     global _store_token
     global _token_birthtime
     if (_store_token is None or 
-            (time.time() - _token_birthtime) > TOKEN_LIVETIME):
+            (time.time() - _token_birthtime) > TOKEN_LIFETIME):
         client_id = os.getenv("CLIENT_ID")
         client_secret = os.getenv("CLIENT_SECRET")
         _store_token = moltin.get_credentials(client_id, client_secret)
