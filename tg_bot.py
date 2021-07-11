@@ -55,6 +55,7 @@ def handle_description(bot, update):
         cart_id,
         get_store_token()
     )
+    update.callback_query.answer(text='Товар добавлен в корзину')
     logger.info(f'Add product {product_id} x {quantity} to cart {cart_id}')
     return "HANDLE_DESCRIPTION"
 
