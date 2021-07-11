@@ -25,16 +25,6 @@ def get_product_details(token, product_id, url=MOLTIN_URL):
     return response.json()["data"]
 
 
-def get_access_token(client_id, url=MOLTIN_URL):
-    data = {
-        'client_id': client_id,
-        'grant_type': 'implicit',
-    }
-    response = requests.post(f'{url}/oauth/access_token', data=data)
-    response.raise_for_status()
-    return response.json()["access_token"]
-
-
 def get_credentials(client_id, client_secret, url=MOLTIN_URL):
     data = {
         "client_id": client_id,
@@ -147,15 +137,6 @@ def get_main_image_url(token, product):
     return get_file(token, image_id)["link"]["href"]
 
 
-def get_quantity_in_cart(token, product_id, cart_id):
-    products = get_cart_items(token, cart_id)
-    desired_product_in_cart = [product for product in products
-                                if product["product_id"] == product_id]
-    if not any(desired_product_in_cart):
-        return 0
-    return desired_product_in_cart[0]["quantity"]
-
-
 def delete_cart_items(token, cart_id, url=MOLTIN_URL):
     headers = {
         "Authorization": f"Bearer {token}",
@@ -221,15 +202,3 @@ def get_customer_by_email(token, email, url=MOLTIN_URL):
     )
     response.raise_for_status()
     return response.json()["data"][0]
-
-
-def get_customer(token, customer_id, url=MOLTIN_URL):
-    headers = {
-        "Authorization": f"Bearer {token}",
-    }
-    response = requests.get(
-        f'{url}/v2/customers/{customer_id}',
-        headers=headers,
-    )
-    response.raise_for_status()
-    return response.json()["data"]
