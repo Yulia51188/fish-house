@@ -4,7 +4,7 @@ import time
 
 import redis
 from dotenv import load_dotenv
-from telegram import InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup, ParseMode
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler, Updater)
 
@@ -98,6 +98,7 @@ def handle_menu(bot, update):
         photo=image_url,
         caption=messages.create_product_message(product),
         reply_markup=reply_markup,
+        parse_mode=ParseMode.MARKDOWN,
     )
     bot.delete_message(
         chat_id=query.message.chat_id,
@@ -209,6 +210,7 @@ def send_cart_message(bot, update):
     update.callback_query.message.edit_text(
         cart_message,
         reply_markup=reply_markup,
+        parse_mode=ParseMode.MARKDOWN
     )
     return
 

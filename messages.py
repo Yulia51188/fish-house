@@ -10,10 +10,10 @@ logger = logging.getLogger('fish_store')
 def create_product_message(product):
     price = product["meta"]["display_price"]["with_tax"]["formatted"]
     message = f'''
-        {product["name"]}\n
+        *{product["name"]}*\n
         {price} per {product["weight"]["kg"]} kg
         {product["meta"]["stock"]["level"]} items on stock\n
-        {product["description"]}
+        _{product["description"]}_
     '''
     return dedent(message)
 
@@ -28,8 +28,8 @@ def create_product_in_cart_message(product, token):
     unit_weight = product_details["weight"]["kg"]
     total_weight = float(product["quantity"]) * unit_weight
     message = f'''
-        {product["name"]}
-        {product["description"]}
+        *{product["name"]}*
+        _{product["description"]}_
         {price} per unit ({unit_weight} kg)
         {total_weight} kg ({product["quantity"]} units) in cart for {cost}
     '''
@@ -49,5 +49,5 @@ def create_cart_message(cart_id, token):
             for product in products
         ]
     )
-    message = f'{products_description}\nTotal: {total_cost}'
+    message = f'{products_description}\n*Total: {total_cost}*'
     return dedent(message)
