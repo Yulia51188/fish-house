@@ -15,7 +15,7 @@ import moltin_interactions as moltin
 
 _database = None
 _store_token = None
-_token_birthtime = None
+_token_birthtime = 0
 
 
 logger = logging.getLogger('fish_store')
