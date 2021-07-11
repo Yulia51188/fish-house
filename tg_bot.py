@@ -16,6 +16,7 @@ import moltin_interactions as moltin
 _database = None
 _store_token = None
 _token_birthtime = 0
+menu_page_index = 0
 
 
 logger = logging.getLogger('fish_store')
@@ -26,8 +27,11 @@ CALLBACKS = {
     "CART": "cart",
     "DELETE_ALL": "delete_all",
     "BUY": "buy",
+    "PREVIOUS_PAGE": "previous_page",
+    "NEXT_PAGE": "next_page",
 }
 TOKEN_LIFETIME = 60000
+MENU_PAGE_LIMIT = 4
 
 
 def handle_error(bot, update, error):
@@ -61,11 +65,30 @@ def handle_description(bot, update):
 
 
 def handle_menu(bot, update):
+
+    global menu_page_index
+
     query = update.callback_query
     product_id = query.data
     if product_id == CALLBACKS["CART"]:
         send_cart_message(bot, update)
         return "HANDLE_CART"
+    if product_id == CALLBACKS["NEXT_PAGE"]:
+        menu_page_index = menu_page_index + 1
+        send_start_menu_message(bot, update)
+        bot.delete_message(
+            chat_id=update.callback_query.message.chat_id,
+            message_id=update.callback_query.message.message_id
+        )
+        return "HANDLE_MENU"
+    if product_id == CALLBACKS["PREVIOUS_PAGE"]:
+        menu_page_index = menu_page_index - 1
+        send_start_menu_message(bot, update)
+        bot.delete_message(
+            chat_id=update.callback_query.message.chat_id,
+            message_id=update.callback_query.message.message_id
+        )
+        return "HANDLE_MENU"
     product = moltin.get_product_details(get_store_token(), product_id)
     image_url = moltin.get_main_image_url(get_store_token(), product)
     reply_markup = InlineKeyboardMarkup(
@@ -141,6 +164,7 @@ def handle_users_reply(bot, update):
     Если пользователь захочет начать общение с ботом заново, он также может воспользоваться этой командой.
     """
     db = get_database_connection()
+    global menu_page_index
 
     if update.message:
         user_reply = update.message.text
@@ -152,9 +176,10 @@ def handle_users_reply(bot, update):
         return
     if user_reply == '/start':
         user_state = 'START'
+        menu_page_index = 0
     else:
         user_state = db.get(chat_id).decode("utf-8")
-
+        menu_page_index = int(db.get(f"{chat_id}_page"))
     states_functions = {
         'START': start,
         'HANDLE_MENU': handle_menu,
@@ -169,6 +194,10 @@ def handle_users_reply(bot, update):
         db.set(chat_id, next_state)
     except Exception as error:
         logger.error(error)
+    try:
+        db.set(f"{chat_id}_page", menu_page_index)
+    except Exception as error:
+        logger.error(error)        
 
 
 def send_cart_message(bot, update):
@@ -185,7 +214,15 @@ def send_cart_message(bot, update):
 
 
 def send_start_menu_message(bot, update):
-    keyboard = keyboards.get_products_keyboard(get_store_token(), CALLBACKS)
+    
+    global menu_page_index
+
+    keyboard = keyboards.get_products_keyboard(
+        get_store_token(),
+        CALLBACKS,
+        MENU_PAGE_LIMIT,
+        menu_page_index
+    )
     reply_markup = InlineKeyboardMarkup(keyboard)
     if update.callback_query:
         update.callback_query.message.reply_text('Please choose:',

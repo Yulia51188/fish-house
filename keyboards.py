@@ -3,15 +3,25 @@ from telegram import InlineKeyboardButton
 import moltin_interactions as moltin
 
 
-def get_products_keyboard(token, callbacks):
+def get_products_keyboard(token, callbacks, page_limit=None, page_index=0):
     products = moltin.get_products(token)
-    buttons = [
+    service_buttons = []
+    product_buttons = [
         [InlineKeyboardButton(product["name"], callback_data=product["id"])]
         for product in products
     ]
-    buttons.append([InlineKeyboardButton('Go to cart',
+    if page_limit and len(product_buttons) > page_limit:
+        product_buttons = product_buttons[page_index * page_limit:]
+        if page_index > 0:
+            service_buttons.append([InlineKeyboardButton('Previous',
+                callback_data=callbacks["PREVIOUS_PAGE"])])
+        if len(product_buttons) > page_limit:
+            product_buttons = product_buttons[:page_limit]
+            service_buttons.append([InlineKeyboardButton('Next',
+                callback_data=callbacks["NEXT_PAGE"])])
+    service_buttons.append([InlineKeyboardButton('Go to cart',
         callback_data=callbacks["CART"])])
-    return buttons
+    return [*product_buttons, *service_buttons]
 
 
 def get_description_keyboard(product, callbacks):
