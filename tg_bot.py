@@ -1,13 +1,14 @@
 import logging
 import os
-from textwrap import dedent
 
 import redis
 from dotenv import load_dotenv
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup
 from telegram.ext import (CallbackQueryHandler, CommandHandler, Filters,
                           MessageHandler, Updater)
 
+import keyboards
+import messages
 import moltin_interactions as moltin
 
 
@@ -77,11 +78,12 @@ def handle_menu(bot, update):
         return "HANDLE_CART"
     product = moltin.get_product_details(get_store_token(), product_id)
     image_url = moltin.get_main_image_url(get_store_token(), product)
-    reply_markup = InlineKeyboardMarkup(get_description_keyboard(product))
+    reply_markup = InlineKeyboardMarkup(
+        keyboards.get_description_keyboard(product, CALLBACKS))
     bot.send_photo(
         chat_id=query.message.chat_id,
         photo=image_url,
-        caption=create_product_message(product),
+        caption=messages.create_product_message(product),
         reply_markup=reply_markup,
     )
     bot.delete_message(
@@ -135,48 +137,6 @@ def handle_ordering(bot, update):
     pass
 
 
-def create_product_message(product):
-    price = product["meta"]["display_price"]["with_tax"]["formatted"]
-    message = f'''
-        {product["name"]}\n
-        {price} per {product["weight"]["kg"]} kg
-        {product["meta"]["stock"]["level"]} items on stock\n
-        {product["description"]}
-    '''
-    return dedent(message)
-
-
-def create_product_in_cart_message(product):
-    product_details = moltin.get_product_details(
-        get_store_token(),
-        product["product_id"]
-    )
-    price = product["meta"]["display_price"]["with_tax"]["unit"]["formatted"]
-    cost = product["meta"]["display_price"]["with_tax"]["value"]["formatted"]
-    unit_weight = product_details["weight"]["kg"]
-    total_weight = float(product["quantity"]) * unit_weight
-    message = f'''
-        {product["name"]}
-        {product["description"]}
-        {price} per unit ({unit_weight} kg)
-        {total_weight} kg ({product["quantity"]} units) in cart for {cost}
-    '''
-    return dedent(message)
-
-
-def create_cart_message(cart_id):
-    cart = moltin.get_cart(get_store_token(), cart_id)
-    logger.info(f"Cart {cart_id} is received")
-    products = moltin.get_cart_items(get_store_token(), cart_id)
-    if not any(products):
-        return 'Your cart is empty'
-    total_cost = cart["meta"]["display_price"]["with_tax"]["formatted"]
-    products_description = ''.join([create_product_in_cart_message(product) 
-                                    for product in products])
-    message = f'{products_description}\nTotal: {total_cost}'
-    return dedent(message)
-
-
 def handle_users_reply(bot, update):
     """
     Функция, которая запускается при любом сообщении от пользователя и решает как его обработать.
@@ -223,9 +183,10 @@ def handle_users_reply(bot, update):
 
 def send_cart_message(bot, update):
     cart_id = update.callback_query.message.chat_id
-    reply_markup = InlineKeyboardMarkup(get_cart_keyboard(cart_id))
+    reply_markup = InlineKeyboardMarkup(keyboards.get_cart_keyboard(cart_id, 
+        get_store_token(), CALLBACKS))
     logger.info(f"Cart keyboard is created: {reply_markup}")
-    cart_message = create_cart_message(cart_id)
+    cart_message = messages.create_cart_message(cart_id, get_store_token())
     update.callback_query.message.edit_text(
         cart_message,
         reply_markup=reply_markup,
@@ -234,7 +195,7 @@ def send_cart_message(bot, update):
 
 
 def send_start_menu_message(bot, update):
-    keyboard = get_products_keyboard()
+    keyboard = keyboards.get_products_keyboard(get_store_token(), CALLBACKS)
     reply_markup = InlineKeyboardMarkup(keyboard)
     if update.callback_query:
         update.callback_query.message.reply_text('Please choose:',
@@ -242,58 +203,6 @@ def send_start_menu_message(bot, update):
         return
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
     return
-
-
-def get_products_keyboard():
-    products = moltin.get_products(get_store_token())
-    buttons = [
-        [InlineKeyboardButton(product["name"], callback_data=product["id"])]
-        for product in products
-    ]
-    buttons.append([InlineKeyboardButton('Go to cart',
-        callback_data=CALLBACKS["CART"])])
-    return buttons
-
-
-def get_description_keyboard(product):
-    quantity_factors = (1, 5, 10)
-    unit_weight = product["weight"]["kg"]
-    quantity_buttons = []
-    for factor in quantity_factors:
-        callback_data = f'{product["id"]}\t{factor}'
-        button_text = f"x{factor} ({unit_weight * factor} kg)"
-        quantity_buttons.append(InlineKeyboardButton(button_text,
-            callback_data=callback_data))
-    back_button = [InlineKeyboardButton("Return to menu",
-        callback_data=CALLBACKS["BACK"])]
-    keyboard = [quantity_buttons, back_button]
-    return keyboard
-
-
-def get_cart_keyboard(cart_id):
-    back_button = [[
-        InlineKeyboardButton(
-            "Return to menu",
-            callback_data=CALLBACKS["BACK"]
-        )
-    ]]
-    products = moltin.get_cart_items(get_store_token(), cart_id)
-    if not any(products):
-        return back_button
-    delete_button = [[InlineKeyboardButton(
-        "Delete all items",
-        callback_data=CALLBACKS["DELETE_ALL"]
-    )]]
-    payment_button = [[InlineKeyboardButton(
-        "Buy",
-        callback_data=CALLBACKS["BUY"]
-    )]]
-    product_buttons = [
-        [InlineKeyboardButton(f'Remove {product["name"]}',
-            callback_data=product["id"])]
-        for product in products
-    ]
-    return [*product_buttons, *delete_button, *payment_button, *back_button]
 
 
 def get_database_connection():
