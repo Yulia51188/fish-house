@@ -52,7 +52,7 @@ def handle_description(bot, update):
         return "HANDLE_MENU"
     product_id, quantity = update.callback_query.data.split('\t')
     cart_id = update.callback_query.message.chat_id
-    _add_to_cart_result = moltin.add_item_to_cart(
+    moltin.add_item_to_cart(
         product_id,
         int(quantity),
         cart_id,
@@ -201,8 +201,13 @@ def handle_users_reply(bot, update):
 
 def send_cart_message(bot, update):
     cart_id = update.callback_query.message.chat_id
-    reply_markup = InlineKeyboardMarkup(keyboards.get_cart_keyboard(cart_id, 
-        get_store_token(), CALLBACKS))
+    reply_markup = InlineKeyboardMarkup(
+        keyboards.get_cart_keyboard(
+            cart_id, 
+            get_store_token(),
+            CALLBACKS
+        )
+    )
     logger.info(f"Cart keyboard is created: {reply_markup}")
     cart_message = messages.create_cart_message(cart_id, get_store_token())
     update.callback_query.message.edit_text(
@@ -224,9 +229,12 @@ def send_start_menu_message(bot, update):
     )
     reply_markup = InlineKeyboardMarkup(keyboard)
     if update.callback_query:
-        update.callback_query.message.reply_text('Please choose:',
-            reply_markup=reply_markup)
+        update.callback_query.message.reply_text(
+            'Please choose:',
+            reply_markup=reply_markup
+        )
         return
+
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
     return
 
@@ -238,8 +246,11 @@ def get_database_connection():
         database_password = os.getenv("DATABASE_PASSWORD", default=None)
         database_host = os.getenv("DATABASE_HOST", default='localhost')
         database_port = os.getenv("DATABASE_PORT", default=6379)
-        _database = redis.Redis(host=database_host, port=database_port,
-            password=database_password)
+        _database = redis.Redis(
+            host=database_host,
+            port=database_port,
+            password=database_password
+        )
     return _database
 
 
@@ -247,8 +258,9 @@ def get_store_token():
     """Возвращает токен CRM магазина, либо запрашивает новый по client_id"""
     global _store_token
     global _token_birthtime
-    if (_store_token is None or 
-            (time.time() - _token_birthtime) > TOKEN_LIFETIME):
+
+    token_time = time.time() - _token_birthtime
+    if (_store_token is None or token_time > TOKEN_LIFETIME):
         client_id = os.getenv("CLIENT_ID")
         client_secret = os.getenv("CLIENT_SECRET")
         _store_token = moltin.get_credentials(client_id, client_secret)
