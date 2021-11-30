@@ -30,7 +30,7 @@ CALLBACKS = {
     "PREVIOUS_PAGE": "previous_page",
     "NEXT_PAGE": "next_page",
 }
-TOKEN_LIFETIME = 60000
+TOKEN_LIFETIME = 60 * 60
 MENU_PAGE_LIMIT = 4
 
 
