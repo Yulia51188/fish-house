@@ -50,6 +50,7 @@ def handle_description(bot, update):
             message_id=update.callback_query.message.message_id
         )
         return "HANDLE_MENU"
+    
     product_id, quantity = update.callback_query.data.split('\t')
     cart_id = update.callback_query.message.chat_id
     moltin.add_item_to_cart(
@@ -179,7 +180,7 @@ def handle_users_reply(bot, update):
     
     if user_reply == '/start':
         user_state = 'START'
-        db.set(f"{chat_id}_page", 0)
+        update_current_page(chat_id, 0)
     else:
         user_state = db.get(chat_id).decode("utf-8")
     
@@ -219,7 +220,9 @@ def send_cart_message(bot, update):
 
 
 def send_start_menu_message(bot, update):
-    menu_page_index = get_current_page(update.callback_query.message.chat_id)
+    callback = update.callback_query
+    chat_id = callback and callback.message.chat_id or update.message.chat_id
+    menu_page_index = get_current_page(chat_id)
 
     keyboard = keyboards.get_products_keyboard(
         get_store_token(),
@@ -271,7 +274,8 @@ def get_store_token():
 
 def get_current_page(chat_id):
     db = get_database_connection()
-    return db.get(f"{chat_id}_page")
+    page_index = db.get(f"{chat_id}_page").decode('utf-8')
+    return int(page_index)
 
 
 def update_current_page(chat_id, new_page_index):
