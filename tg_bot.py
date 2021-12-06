@@ -15,7 +15,7 @@ import moltin_interactions as moltin
 
 _database = None
 _store_token = None
-_token_birthtime = 0
+_token_expires = None
 
 
 logger = logging.getLogger('fish_store')
@@ -260,15 +260,15 @@ def get_database_connection():
 def get_store_token():
     """Возвращает токен CRM магазина, либо запрашивает новый по client_id"""
     global _store_token
-    global _token_birthtime
+    global _token_expires
 
-    token_time = time.time() - _token_birthtime
-    if (_store_token is None or token_time > TOKEN_LIFETIME):
+    if (_store_token is None or time.time() > _token_expires):
         client_id = os.getenv("CLIENT_ID")
         client_secret = os.getenv("CLIENT_SECRET")
-        _store_token = moltin.get_credentials(client_id, client_secret)
-        _token_birthtime = time.time()
-        logger.info(f'Get new client credentials at {_token_birthtime}')
+        credentials = moltin.get_credentials(client_id, client_secret)
+        _store_token = credentials["access_token"]
+        _token_expires = credentials["expires"]
+        logger.info(f'Get new credentials that expires at {_token_expires}')
     return _store_token
 
 

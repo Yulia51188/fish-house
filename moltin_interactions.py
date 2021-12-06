@@ -33,7 +33,7 @@ def get_credentials(client_id, client_secret, url=MOLTIN_URL):
     }
     response = requests.post(f'{url}/oauth/access_token', data=data)
     response.raise_for_status()
-    return response.json()["access_token"]
+    return response.json()
 
 
 def add_item_to_cart(item_id, quantity, cart_id, token, url=MOLTIN_URL):
